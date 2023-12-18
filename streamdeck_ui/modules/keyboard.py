@@ -208,7 +208,8 @@ _SHIFT_KEY_MAPPING = {
 # we remove KEY_ from the key names to make it easier to type
 _SUPPORTED_KEYS = [key.replace("KEY_", "").lower() for key in dir(e) if key.startswith("KEY_")]
 # fmt: on
-
+_BAD_ECODES = ['KEY_CNT', 'KEY_MAX']
+_SUPPORTED_ECODES = [value for name, value in vars(e).items() if name.startswith('KEY_') and name not in _BAD_ECODES]
 
 def parse_keys_as_keycodes(keys: str) -> List[List[str]]:
     stripped = keys.strip().replace(" ", "").lower()
@@ -247,7 +248,7 @@ def parse_keys_as_keycodes(keys: str) -> List[List[str]]:
 
 
 def keyboard_write(string: str):
-    _ui = UInput()
+    _ui = UInput({e.EV_KEY : _SUPPORTED_ECODES})
     caps_lock_is_on = check_caps_lock()
     for char in string:
         if char in _KEY_MAPPING:
@@ -278,7 +279,7 @@ def keyboard_write(string: str):
 
 
 def keyboard_press_keys(keys: str):
-    _ui = UInput()
+    _ui = UInput({e.EV_KEY : _SUPPORTED_ECODES})
     sections = parse_keys_as_keycodes(keys)
     for section_of_keycodes in sections:
         for keycode in section_of_keycodes:
