@@ -21,6 +21,8 @@ filetype = "^1.0.10"
 python-xlib = "^0.33"
 importlib-metadata = "^6.8.0"
 evdev = "^1.6.1"
+wheel = "^0.42.0"
+cython = "~0"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = ">=1.4.2"
