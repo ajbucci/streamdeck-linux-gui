@@ -1,3 +1,4 @@
+poetry build
 python flatpak-poetry-generator --production poetry.lock
 flatpak-builder --force-clean --repo=flatpak-streamdeck build/ io.github.streamdeck-linux-gui.yaml --verbose
 flatpak remote-add --user flatpak-streamdeck flatpak-streamdeck --no-gpg-verify

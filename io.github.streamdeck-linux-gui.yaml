@@ -2,20 +2,44 @@
 app-id: io.github.streamdeck-linux-gui
 command: streamdeck
 runtime: org.kde.Platform
-runtime-version: "6.5"
+runtime-version: "6.6"
 sdk: org.kde.Sdk
 separate-locales: false
 finish-args:
+  - "--device=all"
   - "--device=dri"
   - "--share=ipc"
   - "--share=network"
   - "--socket=wayland"
   - "--socket=fallback-x11"
-  - "--filesystem=~/.streamdeck_ui.json:create"
+  - "--filesystem=~/.streamdeck_ui.json:rw"
+  - "--talk-name=org.kde.StatusNotifierWatcher"
 cleanup:
-  - "/go"
-  - "/bin/scripts"
 modules:
+  - name: libusb
+    config-opts:
+      - "--disable-static"
+      - "--disable-udev"
+    cleanup:
+      - "/lib/*.la"
+      - "/lib/pkgconfig"
+      - "/include"
+    sources:
+      - type: "archive"
+        url: "https://github.com/libusb/libusb/archive/refs/tags/v1.0.26.tar.gz"
+        sha256: "a09bff99c74e03e582aa30759cada218ea8fa03580517e52d463c59c0b25e240"
+    post-install:
+      - "install -Dm644 COPYING /app/share/licenses/libusb/COPYING"
+  - name: hidapi
+    buildsystem: autotools
+    sources:
+      - type: git
+        url: https://github.com/libusb/hidapi.git
+        tag: hidapi-0.14.0
+        x-checker-data:
+          - type: git
+            tag-pattern: "^hidapi-([\\d.]+)$"
+        commit: "d3013f0af3f4029d82872c1a9487ea461a56dee4"
   - name: pyside6
     only-arches:
       - x86_64
