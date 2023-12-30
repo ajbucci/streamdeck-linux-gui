@@ -7,13 +7,12 @@ sdk: org.kde.Sdk
 separate-locales: false
 finish-args:
   - "--device=all"
-  - "--device=dri"
   - "--share=ipc"
   - "--share=network"
-  - "--socket=wayland"
-  - "--socket=fallback-x11"
+  - "--socket=x11"
   - "--filesystem=~/.streamdeck_ui.json:rw"
   - "--talk-name=org.kde.StatusNotifierWatcher"
+  - "--env=QT_QPA_PLATFORM=xcb"
 cleanup:
 modules:
   - name: libusb
