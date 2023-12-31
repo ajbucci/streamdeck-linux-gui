@@ -9,10 +9,10 @@ finish-args:
   - "--device=all"
   - "--share=ipc"
   - "--share=network"
+  - "--socket=wayland"
   - "--socket=x11"
-  - "--filesystem=~/.streamdeck_ui.json:rw"
+  - "--filesystem=home:rw"
   - "--talk-name=org.kde.StatusNotifierWatcher"
-  - "--env=QT_QPA_PLATFORM=xcb"
 cleanup:
 modules:
   - name: libusb
