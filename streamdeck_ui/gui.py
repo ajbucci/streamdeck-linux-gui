@@ -90,6 +90,30 @@ BUTTON_DRAG_STYLE = """
     border-style: outset;}
 """
 
+DIAL_STYLE = """
+    QToolButton {
+    margin: 12px;
+    border: 2px solid #444444;
+    border-radius: 30px;
+    background-color: #000000;
+    border-style: outset;}
+    QToolButton:checked {
+    margin: 12px;
+    border: 2px solid #cccccc;
+    border-radius: 30px;
+    background-color: #000000;
+    border-style: outset;}
+"""
+
+DIAL_DRAG_STYLE = """
+    QToolButton {
+    margin: 2px;
+    border: 2px solid #999999;
+    border-radius: 30px;
+    background-color: #000000;
+    border-style: outset;}
+"""
+
 DEVICE_PAGE_STYLE = """
 background-color: black
 """
@@ -176,6 +200,73 @@ class DraggableButton(QToolButton):
     def dragLeaveEvent(self, e):  # noqa: N802 - Part of QT signature.
         self.setStyleSheet(BUTTON_STYLE)
 
+class DraggableDial(QToolButton):
+    """A QToolButton that supports drag and drop and swaps the button properties on drop"""
+
+    def __init__(self, parent, ui, api_: StreamDeckServer):
+        super(DraggableDial, self).__init__(parent)
+
+        self.setAcceptDrops(True)
+        self.ui = ui
+        self.api = api_
+
+    def mouseMoveEvent(self, e):  # noqa: N802 - Part of QT signature.
+        if e.buttons() != Qt.LeftButton:
+            return
+
+        self.api.reset_dimmer(_deck())
+
+        mime_data = QMimeData()
+        drag = QDrag(self)
+        drag.setMimeData(mime_data)
+        drag.exec(Qt.MoveAction)
+
+    def dropEvent(self, e):  # noqa: N802 - Part of QT signature.
+        global selected_button
+
+        self.setStyleSheet(DIAL_STYLE)
+        deck_id = _deck()
+        page_id = _page()
+
+        index = self.property("index")
+        if e.source():
+            source_index = e.source().property("index")
+            # Ignore drag and drop on yourself
+            if source_index == index:
+                return
+
+            self.api.swap_buttons(deck_id, page_id, source_index, index)
+            # In the case that we've dragged the currently selected button, we have to
+            # check the target button instead, so it appears that it followed the drag/drop
+            if e.source().isChecked():
+                e.source().setChecked(False)
+                self.setChecked(True)
+                selected_button = self
+        else:
+            # Handle drag and drop from outside the application
+            if e.mimeData().hasUrls:
+                file_name = e.mimeData().urls()[0].toLocalFile()
+                self.api.set_button_icon(deck_id, page_id, index, file_name)
+
+        if e.source():
+            source_index = e.source().property("index")
+            icon = self.api.get_button_icon_pixmap(deck_id, page_id, source_index)
+            if icon:
+                e.source().setIcon(icon)
+
+        icon = self.api.get_button_icon_pixmap(deck_id, page_id, index)
+        if icon:
+            self.setIcon(icon)
+
+    def dragEnterEvent(self, e):  # noqa: N802 - Part of QT signature.
+        if type(self) is DraggableDial:
+            e.setAccepted(True)
+            self.setStyleSheet(DIAL_DRAG_STYLE)
+        else:
+            e.setAccepted(False)
+
+    def dragLeaveEvent(self, e):  # noqa: N802 - Part of QT signature.
+        self.setStyleSheet(DIAL_STYLE)
 
 def handle_keypress(ui, deck_id: str, key: int, state: bool) -> None:
     # TODO: Handle both key down and key up events in future.
@@ -899,7 +990,7 @@ def build_buttons(ui, tab) -> None:
     if not deck_id:
         return
     deck_rows, deck_columns = api.get_deck_layout(deck_id)
-
+    is_deck_plus = api.is_deck_plus(deck_id)
     # Create a new base_widget with tab as it's parent
     # This is effectively a "blank tab"
     base_widget = QWidget(tab)
@@ -929,8 +1020,38 @@ def build_buttons(ui, tab) -> None:
             buttons.append(button)
             column_layout.addWidget(button)
             index += 1
+        if is_deck_plus:
+            column_layout.setSpacing(48)
 
         column_layout.addStretch(1)
+    # TODO: check for stream deck plus
+    if is_deck_plus:
+        # do something
+        button_touchscreen = QToolButton()
+        button_touchscreen.setCheckable(True)
+        #button_touchscreen.setProperty("index", index)
+        button_touchscreen.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+        button_touchscreen.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+        button_touchscreen.setIconSize(QSize(496, 62))
+        button_touchscreen.setStyleSheet(BUTTON_STYLE)
+        row_layout.addWidget(button_touchscreen)
+        index += 1
+
+        dial_layout = QHBoxLayout()
+        row_layout.addLayout(dial_layout)
+        for dial_index in range(4):
+            dial = DraggableDial(base_widget, ui, api)
+            dial.setCheckable(True)
+            #dial.setProperty("index", index)
+            dial.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+            dial.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            dial.setIconSize(QSize(60, 60))
+            dial.setStyleSheet(DIAL_STYLE)
+            buttons.append(dial)
+            dial_layout.addWidget(dial)
+            index += 1
+        dial_layout.setSpacing(48)
+        dial_layout.addStretch(1)
     row_layout.addStretch(1)
 
     # Note that the button click event captures the ui variable, the current button
