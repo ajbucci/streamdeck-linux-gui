@@ -201,6 +201,7 @@ class DraggableButton(QToolButton):
     def dragLeaveEvent(self, e):  # noqa: N802 - Part of QT signature.
         self.setStyleSheet(BUTTON_STYLE)
 
+
 class DraggableDial(QToolButton):
     """A QToolButton that supports drag and drop and swaps the button properties on drop"""
 
@@ -268,6 +269,7 @@ class DraggableDial(QToolButton):
 
     def dragLeaveEvent(self, e):  # noqa: N802 - Part of QT signature.
         self.setStyleSheet(DIAL_STYLE)
+
 
 def handle_keypress(ui, deck_id: str, key: int, state: bool) -> None:
     # TODO: Handle both key down and key up events in future.
@@ -525,7 +527,7 @@ def _closest_page(page: int, pages: List[int]) -> int:
             return next_page
 
 
-def redraw_buttons(button_index: int = None) -> None:
+def redraw_buttons(button_index: Optional[int] = None) -> None:
     deck_id = _deck()
     page_id = _page()
     if deck_id is None or page_id is None:
@@ -541,9 +543,9 @@ def redraw_buttons(button_index: int = None) -> None:
             can_redraw = False
             if button_index is None:  # then redraw all buttons
                 can_redraw = True
-            elif button.property("index") == button_index: # just redraw the button @ index
+            elif button.property("index") == button_index:  # just redraw the button @ index
                 can_redraw = True
-            
+
             if can_redraw:
                 icon = api.get_button_icon_pixmap(deck_id, page_id, button.property("index"))
                 if icon is not None:

@@ -1,9 +1,11 @@
 from dataclasses import dataclass, field
-from typing import Dict
+from typing import Dict, Tuple
 
 STREAM_DECK_PLUS_TYPE = "Stream Deck +"
 STREAM_DECK_PLUS_BUTTON_RANGE = range(8)
 STREAM_DECK_PLUS_DIAL_RANGE = range(4)
+
+
 @dataclass
 class ButtonState:
     text: str = ""
@@ -35,25 +37,27 @@ class ButtonState:
     background_color: str = ""
     """Background color of the button"""
 
-#TODO: integrate these dial/touchscreen states into rest of code
+
+# TODO: integrate these dial/touchscreen states into rest of code
 @dataclass
 class DialState:
     """Dial State tuples correspond to actions: rotate counter-clockwise, click, rotate clockwise"""
+
     text: str = ""
     """Text to display on the button"""
     icon: str = ""
     """Icon to display on the button"""
-    keys: (str, str, str) = ("", "", "")
+    keys: Tuple[str, str, str] = ("", "", "")
     """Combination of keys, actionable by the button"""
-    write: (str, str, str) = ("", "", "")
+    write: Tuple[str, str, str] = ("", "", "")
     """Text to write, actionable by the button"""
-    command: (str, str, str) = ("", "", "")
+    command: Tuple[str, str, str] = ("", "", "")
     """Command to execute, actionable by the button"""
     switch_page: int = 0
     """Page to switch, actionable by the button"""
     switch_state: int = 0
     """Button state to switch, actionable by the button"""
-    brightness_change: (int, int, int) = (0, 0, 0)
+    brightness_change: Tuple[int, int, int] = (0, 0, 0)
     """Brightness percent change (-/+), actionable by the button"""
     text_vertical_align: str = ""
     """Vertical alignment of the text on the button"""
@@ -68,24 +72,26 @@ class DialState:
     background_color: str = ""
     """Background color of the button"""
 
+
 @dataclass
 class TouchscreenState:
     """Touchscreen State tuples correspond to actions: swipe left, tap, swipe right"""
+
     text: str = ""
     """Text to display on the button"""
     icon: str = ""
     """Icon to display on the button"""
-    keys: (str, str, str) = ("", "", "")
+    keys: Tuple[str, str, str] = ("", "", "")
     """Combination of keys, actionable by the button"""
-    write: (str, str, str) = ("", "", "")
+    write: Tuple[str, str, str] = ("", "", "")
     """Text to write, actionable by the button"""
-    command: (str, str, str) = ("", "", "")
+    command: Tuple[str, str, str] = ("", "", "")
     """Command to execute, actionable by the button"""
     switch_page: int = 0
     """Page to switch, actionable by the button"""
     switch_state: int = 0
     """Button state to switch, actionable by the button"""
-    brightness_change: (int, int, int) = (0, 0, 0)
+    brightness_change: Tuple[int, int, int] = (0, 0, 0)
     """Brightness percent change (-/+), actionable by the button"""
     text_vertical_align: str = ""
     """Vertical alignment of the text on the button"""
@@ -99,6 +105,8 @@ class TouchscreenState:
     """Font size of the text on the button"""
     background_color: str = ""
     """Background color of the button"""
+
+
 @dataclass
 class ButtonMultiState:
     state: int = 0

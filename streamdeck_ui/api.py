@@ -28,8 +28,9 @@ from streamdeck_ui.display.filter import Filter
 from streamdeck_ui.display.image_filter import ImageFilter
 from streamdeck_ui.display.text_filter import TextFilter
 from streamdeck_ui.logger import logger
-from streamdeck_ui.model import ButtonMultiState, ButtonState, DeckState, STREAM_DECK_PLUS_TYPE
+from streamdeck_ui.model import STREAM_DECK_PLUS_TYPE, ButtonMultiState, ButtonState, DeckState
 from streamdeck_ui.stream_deck_monitor import StreamDeckMonitor
+
 
 class KeySignalEmitter(QObject):
     key_pressed = Signal(str, int, bool)
@@ -322,12 +323,11 @@ class StreamDeckServer:
         """Returns a tuple containing the number of rows and columns for the specified Stream Deck"""
         return self.decks_by_serial[serial_number].key_layout()
 
-
-    def is_deck_plus(self, serial_number: str) -> str:
+    def is_deck_plus(self, serial_number: str) -> bool:
         if self.decks_by_serial[serial_number].deck_type() == STREAM_DECK_PLUS_TYPE:
             return True
         return False
-    
+
     def _button_state(self, serial_number: str, page: int, button: int, state: Optional[int] = None) -> ButtonState:
         multi_state = self._button_multi_state(serial_number, page, button)
         # if no state is specified, use the current state
