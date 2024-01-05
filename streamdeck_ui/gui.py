@@ -95,7 +95,7 @@ DIAL_STYLE = """
     margin: 12px;
     border: 2px solid #444444;
     border-radius: 30px;
-    background-color: #000000;
+    background: qradialgradient(cx: 0.5, cy: 0.5, radius: 1, fx: 0.5, fy: 0.5, stop: 0 #222222, stop: 0.2 #111111, stop: 1 black);
     border-style: outset;}
     QToolButton:checked {
     margin: 12px;
@@ -107,7 +107,7 @@ DIAL_STYLE = """
 
 DIAL_DRAG_STYLE = """
     QToolButton {
-    margin: 2px;
+    margin: 12px;
     border: 2px solid #999999;
     border-radius: 30px;
     background-color: #000000;
@@ -234,7 +234,7 @@ class DraggableDial(QToolButton):
             # Ignore drag and drop on yourself
             if source_index == index:
                 return
-
+            # TODO: need to make this work...
             self.api.swap_buttons(deck_id, page_id, source_index, index)
             # In the case that we've dragged the currently selected button, we have to
             # check the target button instead, so it appears that it followed the drag/drop
@@ -530,7 +530,8 @@ def redraw_buttons() -> None:
     if deck_id is None or page_id is None:
         return
     current_tab = main_window.ui.pages.currentWidget()
-    buttons = current_tab.findChildren(QToolButton)
+    # TODO: set this up for DraggableDial and touchscreen button
+    buttons = current_tab.findChildren(DraggableButton)
     for button in buttons:
         if not button.isHidden():
             # When rebuilding the buttons, we hide the old ones
@@ -548,7 +549,8 @@ def redraw_button(button_index: int) -> None:
         return
 
     current_tab = main_window.ui.pages.currentWidget()
-    buttons = current_tab.findChildren(QToolButton)
+    # TODO: set this up for DraggableDial and touchscreen button
+    buttons = current_tab.findChildren(DraggableButton)
     for button in buttons:
         if not button.isHidden():
             if button.property("index") == button_index:
@@ -1025,11 +1027,11 @@ def build_buttons(ui, tab) -> None:
 
         column_layout.addStretch(1)
     # TODO: check for stream deck plus
+    dials = []
     if is_deck_plus:
-        # do something
         button_touchscreen = QToolButton()
         button_touchscreen.setCheckable(True)
-        #button_touchscreen.setProperty("index", index)
+        button_touchscreen.setProperty("index", index)
         button_touchscreen.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
         button_touchscreen.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
         button_touchscreen.setIconSize(QSize(496, 62))
@@ -1042,12 +1044,12 @@ def build_buttons(ui, tab) -> None:
         for dial_index in range(4):
             dial = DraggableDial(base_widget, ui, api)
             dial.setCheckable(True)
-            #dial.setProperty("index", index)
+            dial.setProperty("index", index)
             dial.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
             dial.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
             dial.setIconSize(QSize(60, 60))
             dial.setStyleSheet(DIAL_STYLE)
-            buttons.append(dial)
+            dials.append(dial)
             dial_layout.addWidget(dial)
             index += 1
         dial_layout.setSpacing(48)
