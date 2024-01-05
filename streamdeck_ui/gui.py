@@ -42,6 +42,7 @@ from streamdeck_ui.config import (
     do_config_file_migration,
 )
 from streamdeck_ui.display.text_filter import is_a_valid_text_filter_font
+from streamdeck_ui.model import STREAM_DECK_PLUS_DIAL_RANGE
 from streamdeck_ui.modules.fonts import DEFAULT_FONT_FAMILY, FONTS_DICT, find_font_info
 from streamdeck_ui.modules.keyboard import KeyPressAutoComplete, keyboard_press_keys, keyboard_write
 from streamdeck_ui.modules.utils.timers import debounce
@@ -334,7 +335,7 @@ def handle_keypress(ui, deck_id: str, key: int, state: bool) -> None:
                             if ui.button_states.widget(button_state).property("button_state_id") == switch_state_index:
                                 ui.button_states.setCurrentIndex(button_state)
                                 break
-                    redraw_button(key)
+                    redraw_buttons(key)
             else:
                 show_tray_warning_message(
                     f"Unable to perform switch button state, the button state {switch_state} does not exist in your current settings"  # noqa: E713
@@ -405,7 +406,7 @@ def handle_change_button_state() -> None:
     button_state_id = _button_state()
     if deck_id is not None and page_id is not None and button_id is not None and button_state_id is not None:
         api.set_button_state(deck_id, page_id, button_id, button_state_id)
-        redraw_button(button_id)
+        redraw_buttons(button_id)
         api.reset_dimmer(deck_id)
 
 
@@ -524,39 +525,31 @@ def _closest_page(page: int, pages: List[int]) -> int:
             return next_page
 
 
-def redraw_buttons() -> None:
+def redraw_buttons(button_index: int = None) -> None:
     deck_id = _deck()
     page_id = _page()
     if deck_id is None or page_id is None:
         return
     current_tab = main_window.ui.pages.currentWidget()
-    # TODO: set this up for DraggableDial and touchscreen button
-    buttons = current_tab.findChildren(DraggableButton)
+
+    buttons = current_tab.findChildren(QToolButton)
     for button in buttons:
         if not button.isHidden():
             # When rebuilding the buttons, we hide the old ones
             # and mark for deletion. They still hang around so
             # ignore them here
-            icon = api.get_button_icon_pixmap(deck_id, page_id, button.property("index"))
-            if icon is not None:
-                button.setIcon(icon)
-
-
-def redraw_button(button_index: int) -> None:
-    deck_id = _deck()
-    page_id = _page()
-    if deck_id is None or page_id is None:
-        return
-
-    current_tab = main_window.ui.pages.currentWidget()
-    # TODO: set this up for DraggableDial and touchscreen button
-    buttons = current_tab.findChildren(DraggableButton)
-    for button in buttons:
-        if not button.isHidden():
-            if button.property("index") == button_index:
+            can_redraw = False
+            if button_index is None:  # then redraw all buttons
+                can_redraw = True
+            elif button.property("index") == button_index: # just redraw the button @ index
+                can_redraw = True
+            
+            if can_redraw:
                 icon = api.get_button_icon_pixmap(deck_id, page_id, button.property("index"))
                 if icon is not None:
                     button.setIcon(icon)
+                    if button_index:
+                        break
 
 
 def set_brightness(value: int) -> None:
@@ -647,7 +640,7 @@ def build_button_state_pages():
         if some_state:
             ui.button_states.setCurrentIndex(active_tab_index)
             ui.add_button_state.setEnabled(True)
-            redraw_button(button_id)
+            redraw_buttons(button_id)
         else:
             ui.add_button_state.setEnabled(False)
     finally:
@@ -992,7 +985,6 @@ def build_buttons(ui, tab) -> None:
     if not deck_id:
         return
     deck_rows, deck_columns = api.get_deck_layout(deck_id)
-    is_deck_plus = api.is_deck_plus(deck_id)
     # Create a new base_widget with tab as it's parent
     # This is effectively a "blank tab"
     base_widget = QWidget(tab)
@@ -1022,13 +1014,11 @@ def build_buttons(ui, tab) -> None:
             buttons.append(button)
             column_layout.addWidget(button)
             index += 1
-        if is_deck_plus:
-            column_layout.setSpacing(48)
 
         column_layout.addStretch(1)
-    # TODO: check for stream deck plus
-    dials = []
-    if is_deck_plus:
+
+    if api.is_deck_plus(deck_id):
+        # set up the touchscreen button
         button_touchscreen = QToolButton()
         button_touchscreen.setCheckable(True)
         button_touchscreen.setProperty("index", index)
@@ -1036,12 +1026,13 @@ def build_buttons(ui, tab) -> None:
         button_touchscreen.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
         button_touchscreen.setIconSize(QSize(496, 62))
         button_touchscreen.setStyleSheet(BUTTON_STYLE)
+        buttons.append(button_touchscreen)
         row_layout.addWidget(button_touchscreen)
         index += 1
 
         dial_layout = QHBoxLayout()
         row_layout.addLayout(dial_layout)
-        for dial_index in range(4):
+        for _dial_index in STREAM_DECK_PLUS_DIAL_RANGE:
             dial = DraggableDial(base_widget, ui, api)
             dial.setCheckable(True)
             dial.setProperty("index", index)
@@ -1049,13 +1040,16 @@ def build_buttons(ui, tab) -> None:
             dial.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
             dial.setIconSize(QSize(60, 60))
             dial.setStyleSheet(DIAL_STYLE)
-            dials.append(dial)
+            buttons.append(dial)
             dial_layout.addWidget(dial)
             index += 1
-        dial_layout.setSpacing(48)
+        # space out the buttons more to match increased physical spacing on the Plus
+        standard_button_layouts = row_layout.findChildren(QHBoxLayout)
+        for layout in standard_button_layouts:
+            layout.setSpacing(48)
         dial_layout.addStretch(1)
-    row_layout.addStretch(1)
 
+    row_layout.addStretch(1)
     # Note that the button click event captures the ui variable, the current button
     #  and all the other buttons
     for button in buttons:
@@ -1342,7 +1336,7 @@ def create_main_window(api: StreamDeckServer, app: QApplication) -> MainWindow:
 
     ui = main_window.ui
     # allow call redraw_button from ui instance
-    ui.redraw_button = redraw_button  # type: ignore [attr-defined]
+    ui.redraw_buttons = redraw_buttons  # type: ignore [attr-defined]
 
     api.streamdeck_keys.key_pressed.connect(partial(handle_keypress, ui))
 

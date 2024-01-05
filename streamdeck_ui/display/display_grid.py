@@ -12,7 +12,7 @@ from streamdeck_ui.display.empty_filter import EmptyFilter
 from streamdeck_ui.display.filter import Filter
 from streamdeck_ui.display.keypress_filter import KeypressFilter
 from streamdeck_ui.display.pipeline import Pipeline
-
+from streamdeck_ui.model import STREAM_DECK_PLUS_TYPE, STREAM_DECK_PLUS_BUTTON_RANGE
 
 class DisplayGrid:
     """
@@ -147,6 +147,10 @@ class DisplayGrid:
             pipeline_cache_count = 0
 
             for button, pipeline in page.items():
+                # First, check if we can't set key image and skip
+                #TODO: add logic for touchscreen image
+                if self.streamdeck.deck_type() == STREAM_DECK_PLUS_TYPE and button not in STREAM_DECK_PLUS_BUTTON_RANGE:
+                    continue
                 # Process all the steps in the pipeline and return the resulting image
                 with self.lock:
                     image, hashcode = pipeline.execute(current_time)

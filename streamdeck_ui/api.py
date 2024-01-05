@@ -28,10 +28,8 @@ from streamdeck_ui.display.filter import Filter
 from streamdeck_ui.display.image_filter import ImageFilter
 from streamdeck_ui.display.text_filter import TextFilter
 from streamdeck_ui.logger import logger
-from streamdeck_ui.model import ButtonMultiState, ButtonState, DeckState
+from streamdeck_ui.model import ButtonMultiState, ButtonState, DeckState, STREAM_DECK_PLUS_TYPE
 from streamdeck_ui.stream_deck_monitor import StreamDeckMonitor
-
-STREAM_DECK_PLUS_TYPE = "Stream Deck +"
 
 class KeySignalEmitter(QObject):
     key_pressed = Signal(str, int, bool)
@@ -323,12 +321,10 @@ class StreamDeckServer:
     def get_deck_layout(self, serial_number: str) -> Tuple[int, int]:
         """Returns a tuple containing the number of rows and columns for the specified Stream Deck"""
         return self.decks_by_serial[serial_number].key_layout()
-    
-    def get_deck_type(self, serial_number: str) -> str:
-        return self.decks_by_serial[serial_number].deck_type()
+
 
     def is_deck_plus(self, serial_number: str) -> str:
-        if self.get_deck_type(serial_number) == "Stream Deck +":
+        if self.decks_by_serial[serial_number].deck_type() == STREAM_DECK_PLUS_TYPE:
             return True
         return False
     

@@ -36,7 +36,7 @@ class SetButtonStateCommand:
             return
         api.set_button_state(deck_id, page_id, self.button_index, self.button_state_index)
         ui.button_states.setCurrentIndex(self.button_state_index)
-        ui.redraw_button(self.button_index)  # type: ignore [attr-defined]
+        ui.redraw_buttons(self.button_index)  # type: ignore [attr-defined]
 
 
 class SetBrightnessCommand:
